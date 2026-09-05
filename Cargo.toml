@@ -1,0 +1,21 @@
+[package]
+name = "enuminfo_macros"
+version = "0.1.0"
+authors = ["Dante Doménech <dante19031999@gmail.com>"]
+description = "Procedural derive macros for enum inspection, string conversion, and name lookup."
+readme = "README.md"
+repository = "https://github.com/dante19031999/enuminfo-macros" # Cambia esto por tu repo
+license = "MIT OR Apache-2.0"
+keywords = ["enum", "proc-macro", "derive", "case", "string"]
+categories = ["development-tools::procedural-macro-helpers", "rust-patterns"]
+edition = "2021"
+
+[lib]
+proc-macro = true
+
+[dependencies]
+quote = "1.0"
+proc-macro2 = "1.0"
+syn = { version = "2.0", features = ["full", "extra-traits"] }
+heck = "0.5"
+

@@ -1,0 +1,38 @@
+name: Build Docker Image (Manual)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/rust-ci-tools:latest
+
+jobs:
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      # 1. Download Dockerfile
+      - name: Download Dockerfile
+        run: |
+          curl -sSL https://raw.githubusercontent.com/dante19031999/enuminfo-macros/main/Dockerfile -o Dockerfile
+
+      # 2. Login GHCR
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # 3. Construct and push docker image
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}

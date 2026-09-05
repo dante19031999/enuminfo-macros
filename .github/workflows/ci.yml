@@ -6,9 +6,9 @@ on:
   pull_request:
     branches: [ "main" ]
 
-# Permisos requeridos para publicar en GitHub Pages
 permissions:
   contents: read
+  packages: read
   pages: write
   id-token: write
 
@@ -18,35 +18,47 @@ concurrency:
 
 env:
   CARGO_TERM_COLOR: always
+  CI_IMAGE: ghcr.io/dante19031999/rust-ci-tools:latest
 
 jobs:
   # ------------------------------------------------------------------
-  # FASE 1: BUILD
+  # PHASE 1: BUILD
   # ------------------------------------------------------------------
   build:
     runs-on: ubuntu-latest
     container:
-      image: rust:latest # Puedes reemplazar con tu imagen propia
+      image: ghcr.io/dante19031999/rust-ci-tools:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
 
       - name: Build
         run: cargo build --verbose
 
+      - name: Save Workspace
+        uses: actions/upload-artifact@v4
+        with:
+          name: workspace
+          path: .
+
   # ------------------------------------------------------------------
-  # FASE 2: TEST & AUDIT
+  # PHASE 2: TEST & AUDIT
   # ------------------------------------------------------------------
   test:
     needs: build
     runs-on: ubuntu-latest
     container:
-      image: rust:latest # O tu imagen personalizada con cargo-deny / audit preinstalados
+      image: ghcr.io/dante19031999/rust-ci-tools:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Tools (Omitir si usas imagen personalizada)
-        run: |
-          cargo install cargo-deny cargo-audit --locked
+      - name: Download Workspace
+        uses: actions/download-artifact@v4
+        with:
+          name: workspace
 
       - name: Run tests
         run: cargo test --verbose
@@ -58,37 +70,36 @@ jobs:
         run: cargo audit
 
   # ------------------------------------------------------------------
-  # FASE 3: RELEASE & PAGES
+  # PHASE 3: RELEASE & PAGES
   # ------------------------------------------------------------------
   release:
     needs: test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
     container:
-      image: rust:latest # O tu imagen personalizada con cargo-about preinstalado
+      image: ghcr.io/dante19031999/rust-ci-tools:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
-
-      - name: Install Tools (Omitir si usas imagen personalizada)
-        run: |
-          cargo install cargo-about --locked
+      - name: Download Workspace
+        uses: actions/download-artifact@v4
+        with:
+          name: workspace
 
       - name: Build Documentation & Acknowledgements
         run: |
           cargo doc --no-deps
           cargo about generate about.hbs > target/doc/ACKNOWLEDGEMENTS.html
-          
-          # Crear redirección index.html -> documentación del crate principal
-          # Cambia "enuminfo_macros" por el nombre real de tu caja en snake_case
           echo '<meta http-equiv="refresh" content="0; url=enuminfo_macros/index.html">' > target/doc/index.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
 
-      - name: Upload artifact
+      - name: Upload Pages Artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: 'target/doc'

@@ -151,7 +151,16 @@ The `rename_all` attribute supports standard `serde`-compatible casing strings:
 
 ---
 
-## License
+## 📜 License
 
-Dual-licensed under [MIT](https://www.google.com/search?q=LICENSE-MIT) or [Apache 2.0](https://www.google.com/search?q=LICENSE-APACHE).
+Licensed under either of:
 
+    Apache License, Version 2.0 (LICENSE-APACHE or http://www.apache.org/licenses/LICENSE-2.0)
+
+    MIT license (LICENSE-MIT or http://opensource.org/licenses/MIT)
+
+at your option.
+
+## Contribution
+
+Unless you explicitly state otherwise, any contribution intentionally submitted for inclusion in the work by you, as defined in the Apache-2.0 license, shall be dual licensed as above, without any additional terms or conditions.

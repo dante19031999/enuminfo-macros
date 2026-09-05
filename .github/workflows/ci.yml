@@ -18,7 +18,6 @@ concurrency:
 
 env:
   CARGO_TERM_COLOR: always
-  CI_IMAGE: ghcr.io/dante19031999/rust-ci-tools:latest
 
 jobs:
   # ------------------------------------------------------------------

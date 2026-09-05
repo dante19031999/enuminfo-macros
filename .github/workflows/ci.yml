@@ -91,12 +91,12 @@ jobs:
 
       - name: Build Documentation
         run: cargo doc --no-deps
-          echo '<meta http-equiv="refresh" content="0; url=enuminfo_macros/index.html">' > target/doc/index.html
 
       - name: Acknowledgements
-        run: |
-          about generate about.hbs > target/doc/ACKNOWLEDGEMENTS.html
-          echo '<meta http-equiv="refresh" content="0; url=enuminfo_macros/index.html">' > target/doc/index.html
+        run: /usr/local/cargo/bin/cargo-about generate about.hbs > target/doc/ACKNOWLEDGEMENTS.html
+
+      - name: Setup home
+        run: echo '<meta http-equiv="refresh" content="0; url=enuminfo_macros/index.html">' > target/doc/index.html
 
       - name: Setup Pages
         uses: actions/configure-pages@v5

@@ -59,7 +59,7 @@ pub fn implement_enum_variants(input: DeriveInput) -> syn::Result<TokenStream> {
             }
             if !variant.fields.is_empty() {
                 return Err(Error::new(
-                    input.span(),
+                    variant.span(),
                     "This macro only works on Unit Enums",
                 ));
             }
@@ -88,12 +88,29 @@ pub fn implement_enum_variants(input: DeriveInput) -> syn::Result<TokenStream> {
 
         }
 
+        #[cfg(feature = "impl-enuminfo")]
+        let enuminfo_quote = quote! {
+            impl enuminfo::EnumVariants for #enum_ident {
+                fn variants() -> &'static [Self]
+                where
+                    Self: Sized
+                {
+                    Self::VARIANTS
+                }
+            }
+        };
+
+        #[cfg(not(feature = "impl-enuminfo"))]
+        let enuminfo_quote = quote! {};
+
         let expanded = quote! {
             impl #enum_ident {
                 pub const VARIANTS: &'static [#enum_ident] = &[
                         #(#variants)*
                 ];
             }
+
+            #enuminfo_quote
         };
 
         Ok(expanded)

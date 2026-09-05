@@ -62,7 +62,7 @@ pub fn implement_enum_from_name(input: DeriveInput) -> syn::Result<TokenStream> 
             }
             if !variant.fields.is_empty() {
                 return Err(Error::new(
-                    input.span(),
+                    variant.span(),
                     "This macro only works on Unit Enums",
                 ));
             }
@@ -110,6 +110,48 @@ pub fn implement_enum_from_name(input: DeriveInput) -> syn::Result<TokenStream> 
             });
         }
 
+        #[cfg(feature = "impl-enuminfo")]
+        let enuminfo_quote = quote! {
+            impl enuminfo::EnumFromName for #enum_ident {
+                fn from_name(name: &str) -> Option<Self>
+                where
+                    Self: Sized
+                {
+                    #enum_ident::from_name(name)
+                }
+
+                fn from_raw_name(name: &str) -> Option<Self>
+                where
+                    Self: Sized
+                {
+                    #enum_ident::from_raw_name(name)
+                }
+            }
+        };
+
+        #[cfg(not(feature = "impl-enuminfo"))]
+        let enuminfo_quote = quote! {};
+
+
+        #[cfg(feature = "from-str")]
+        let from_str = quote! {
+            impl std::str::FromStr for #enum_ident {
+                type Err = enuminfo::error::EnumFromNameError;
+
+                fn from_str(s: &str) -> Result<Self, Self::Err> {
+                    Self::from_name(s).ok_or_else(|| {
+                        enuminfo::error::EnumFromNameError::new(
+                            stringify!(#enum_ident).to_string(),
+                            s.to_string(),
+                        )
+                    })
+                }
+            }
+        };
+
+        #[cfg(not(feature = "from-str"))]
+        let from_str = quote! {};
+
         let expanded = quote! {
             impl #enum_ident {
                 pub fn from_name(name: &str) -> Option<#enum_ident> {
@@ -126,6 +168,9 @@ pub fn implement_enum_from_name(input: DeriveInput) -> syn::Result<TokenStream> 
                     }
                 }
             }
+
+            #enuminfo_quote
+            #from_str
         };
 
         Ok(expanded)

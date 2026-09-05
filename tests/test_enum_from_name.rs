@@ -1,7 +1,8 @@
 use enuminfo_macros::EnumFromName; // Cambia según el nombre de tu crate de macros
+use enuminfo_macros::EnumClass;
 
 // 1. Enum básico
-#[derive(Debug, PartialEq, EnumFromName)]
+#[derive(Debug, PartialEq, EnumFromName, EnumClass)]
 #[allow(dead_code)]
 enum SimpleEnum {
     FirstVariant,
@@ -9,7 +10,7 @@ enum SimpleEnum {
 }
 
 // 2. Enum con rename_all y rename individual
-#[derive(Debug, PartialEq, EnumFromName)]
+#[derive(Debug, PartialEq, EnumFromName, EnumClass)]
 #[enuminfo(rename_all = "snake_case")]
 #[allow(dead_code)]
 enum CustomEnum {
@@ -19,7 +20,7 @@ enum CustomEnum {
 }
 
 // 3. Enum con ignore_from_name
-#[derive(Debug, PartialEq, EnumFromName)]
+#[derive(Debug, PartialEq, EnumFromName, EnumClass)]
 #[enuminfo(rename_all = "kebab-case")]
 #[allow(dead_code)]
 enum IgnoredEnum {
@@ -28,7 +29,7 @@ enum IgnoredEnum {
     IgnoredStatus,
 }
 
-#[derive(Debug, PartialEq, EnumFromName)]
+#[derive(Debug, PartialEq, EnumFromName, EnumClass)]
 #[allow(dead_code)]
 enum TroubleSomeEnum {
     //FirstVariant(),

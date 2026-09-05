@@ -3,6 +3,7 @@ use enuminfo_macros::EnumVariants;
 #[test]
 fn test_basic_enum_variants() {
     #[derive(Debug, PartialEq, Eq, EnumVariants)]
+    #[allow(dead_code)]
     enum Status {
         Pending,
         Active,
@@ -18,6 +19,7 @@ fn test_basic_enum_variants() {
 #[test]
 fn test_enum_variants_with_ignore() {
     #[derive(Debug, PartialEq, Eq, EnumVariants)]
+    #[allow(dead_code)]
     enum Role {
         Admin,
         User,

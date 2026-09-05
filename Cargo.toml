@@ -10,6 +10,12 @@ keywords = ["enum", "proc-macro", "derive", "case", "string"]
 categories = ["development-tools::procedural-macro-helpers", "rust-patterns"]
 edition = "2021"
 
+[features]
+default = ["from-str", "into-iter"]
+"impl-enuminfo" = []
+"from-str" = []
+"into-iter" = []
+
 [lib]
 proc-macro = true
 
@@ -19,3 +25,5 @@ proc-macro2 = "1.0"
 syn = { version = "2.0", features = ["full", "extra-traits"] }
 heck = "0.5"
 
+[dev-dependencies]
+enuminfo = { git = "https://github.com/dante19031999/enuminfo" }

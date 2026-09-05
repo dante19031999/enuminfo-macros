@@ -78,6 +78,22 @@ pub fn implement_enum_name(input: DeriveInput) -> syn::Result<TokenStream> {
             });
         }
 
+        #[cfg(feature = "impl-enuminfo")]
+        let enuminfo_quote = quote! {
+            impl enuminfo::EnumName for #enum_ident {
+                fn name(&self) -> &'static str {
+                    #enum_ident::name(self)
+                }
+
+                fn raw_name(&self) -> &'static str {
+                    #enum_ident::raw_name(self)
+                }
+            }
+        };
+
+        #[cfg(not(feature = "impl-enuminfo"))]
+        let enuminfo_quote = quote! {};
+
         let expanded = quote! {
             impl #enum_ident {
                 pub const fn name(&self) -> &'static str {
@@ -92,6 +108,8 @@ pub fn implement_enum_name(input: DeriveInput) -> syn::Result<TokenStream> {
                     }
                 }
             }
+
+            #enuminfo_quote
         };
 
         Ok(expanded)

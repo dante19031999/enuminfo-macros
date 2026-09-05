@@ -21,12 +21,22 @@ pub fn implement_enum_is(input: DeriveInput) -> Result<TokenStream> {
             })
         }
 
+        #[cfg(feature = "impl-enuminfo")]
+        let enuminfo_quote = quote! {
+            impl enuminfo::EnumIs for #enum_ident {}
+        };
+
+        #[cfg(not(feature = "impl-enuminfo"))]
+        let enuminfo_quote = quote! {};
+
         // Build final code
-        let struct_name = &input.ident;
+        let enum_ident = &input.ident;
         let expanded = quote! {
-            impl #struct_name {
+            impl #enum_ident {
                 #(#functions)*
             }
+
+            #enuminfo_quote
         };
 
         Ok(expanded)

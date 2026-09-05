@@ -1,4 +1,4 @@
-//! A collection of procedural derive macros providing inspection, string conversion, 
+//! A collection of procedural derive macros providing inspection, string conversion,
 //! and construction utilities for Rust enums.
 //!
 //! # Overview
@@ -26,11 +26,12 @@
 //!
 //! > **Note:** Casing options and behavior are aligned with standard `serde` attribute names for consistency across serialization and enum utilities.
 
-mod enum_is;
+mod enum_class;
 mod enum_from_name;
+mod enum_is;
 mod enum_name;
-mod rename_case;
 mod enum_variants;
+mod rename_case;
 
 extern crate proc_macro;
 use proc_macro::TokenStream;
@@ -196,6 +197,39 @@ pub fn enum_variants(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as DeriveInput);
 
     enum_variants::implement_enum_variants(input)
+        .unwrap_or_else(|err| err.to_compile_error())
+        .into()
+}
+
+/// Derives the `enuminfo::EnumClass` trait implementation for an enumeration.
+///
+/// Applying `#[derive(EnumClass)]` automatically generates:
+/// 1. An inherent `class()` method on the enum: `fn class() -> &'static str`.
+/// 2. The trait implementation for `enuminfo::EnumClass`.
+///
+/// # Errors
+///
+/// Emits a compile error if applied to a `struct` or `union`, as it is strictly designed
+/// for `enum` types.
+///
+/// # Examples
+///
+/// ```rust
+/// use enuminfo_macros::EnumClass;
+///
+/// #[derive(EnumClass)]
+/// enum Status {
+///     Active,
+///     Inactive,
+/// }
+///
+/// assert_eq!(Status::class(), "Status");
+/// ```
+#[proc_macro_derive(EnumClass)]
+pub fn enum_class(input: TokenStream) -> TokenStream {
+    let input = parse_macro_input!(input as DeriveInput);
+
+    enum_class::implement_enum_class(input)
         .unwrap_or_else(|err| err.to_compile_error())
         .into()
 }

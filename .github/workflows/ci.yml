@@ -93,7 +93,7 @@ jobs:
         run: cargo doc --no-deps
 
       - name: Acknowledgements
-        run: /usr/local/cargo/bin/cargo-about generate about.hbs > target/doc/ACKNOWLEDGEMENTS.html
+        run: cargo about generate about.hbs > target/doc/ACKNOWLEDGEMENTS.html
 
       - name: Setup home
         run: echo '<meta http-equiv="refresh" content="0; url=enuminfo_macros/index.html">' > target/doc/index.html

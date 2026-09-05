@@ -1,3 +1,5 @@
+install:
+	cargo install cargo-deny cargo-audit cargo-about --locked
 
 audit:
 	cargo audit

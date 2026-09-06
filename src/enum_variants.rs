@@ -97,6 +97,14 @@ pub fn implement_enum_variants(input: DeriveInput) -> syn::Result<TokenStream> {
                 {
                     Self::VARIANTS
                 }
+
+                fn variant_count() -> usize
+                where
+                    Self: Sized
+                {
+                    Self::VARIANTS.len()
+                }
+
             }
         };
 

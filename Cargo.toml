@@ -1,6 +1,6 @@
 [package]
 name = "enuminfo_macros"
-version = "0.2.0"
+version = "0.3.0"
 authors = ["Dante Doménech <dante19031999@gmail.com>"]
 description = "Procedural derive macros for enum inspection, string conversion, lookup, and variant enumeration."
 readme = "README.md"
@@ -37,4 +37,4 @@ syn = { version = "2.0", features = ["full", "extra-traits"] }
 heck = "0.5"
 
 [dev-dependencies]
-enuminfo = { version = "0.1.0" }
+enuminfo = { version = "0.2.0" }

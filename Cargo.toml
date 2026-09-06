@@ -11,11 +11,10 @@ categories = ["development-tools::procedural-macro-helpers", "rust-patterns"]
 edition = "2021"
 
 [features]
-default = ["from-str", "into-iter"]
+default = ["from-str"]
 "impl-enuminfo" = []
 "skip-inherent" = []
 "from-str" = []
-"into-iter" = []
 
 [lib]
 proc-macro = true

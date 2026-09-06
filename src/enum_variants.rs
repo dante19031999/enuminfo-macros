@@ -43,7 +43,7 @@ pub fn implement_enum_variants(input: DeriveInput) -> syn::Result<TokenStream> {
                             let value: LitStr = meta.value()?.parse()?;
                             renamed = Some(value);
                             Ok(())
-                        } else if meta.path.is_ident("ignore_variants") {
+                        } else if meta.path.is_ident("ignore_variant") {
                             ignore = true;
                             Ok(())
                         } else {

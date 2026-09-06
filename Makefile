@@ -7,6 +7,9 @@ audit:
 deny:
 	cargo deny check
 
+doc:
+	cargo doc
+
 ackowledgments:
 	cargo about generate about.hbs > ACKNOWLEDGEMENTS.html
 

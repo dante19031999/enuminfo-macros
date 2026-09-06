@@ -94,11 +94,12 @@ jobs:
           name: workspace
 
       - name: Build Documentation
-        run: cargo doc --no-deps
+        run: cargo doc
 
       - name: Acknowledgements
         run: cargo about generate about.hbs > target/doc/ACKNOWLEDGEMENTS.html
 
+      - name: Setup home
       - name: Setup home
         run: echo '<meta http-equiv="refresh" content="0; url=enuminfo_macros/index.html">' > target/doc/index.html
 

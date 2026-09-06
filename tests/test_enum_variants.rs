@@ -27,7 +27,7 @@ fn test_enum_variants_with_ignore() {
     enum Role {
         Admin,
         User,
-        #[enuminfo(ignore_variants)]
+        #[enuminfo(ignore_variant)]
         InternalSystem,
     }
 

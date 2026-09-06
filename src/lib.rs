@@ -1,17 +1,31 @@
 //! A collection of procedural derive macros providing inspection, string conversion,
-//! and construction utilities for Rust enums.
+//! lookup, and variant enumeration utilities for Rust enums.
 //!
 //! # Overview
 //!
-//! This crate provides three derive macros:
-//! - [`EnumIs`]: Generates boolean checker methods (`is_variant()`) for enum variants.
-//! - [`EnumName`]: Generates methods (`name()` and `raw_name()`) returning variant names as string slices.
-//! - [`EnumFromName`]: Generates lookup methods (`from_name()` and `from_raw_name()`) to construct unit enum variants from string names.
+//! This crate provides four derive macros:
+//! - [`EnumIs`]: Generates boolean checker methods (`is_<variant>()`) for enum variants.
+//! - [`EnumName`]: Generates `const` methods (`name()` and `raw_name()`) returning variant names as string slices.
+//! - [`EnumFromName`]: Generates lookup constructors (`from_name()` and `from_raw_name()`) to instantiate unit enum variants from string names (with optional [`FromStr`](core::str::FromStr) support).
+//! - [`EnumVariants`]: Generates an associated constant array slice (`VARIANTS`) and helper methods (`variants()` and `variant_count()`) containing all unit variants.
+//!
+//! # Attributes Reference
+//!
+//! The following attributes can be placed on enums or their variants under the `#[enuminfo(...)]` helper attribute:
+//!
+//! | Attribute | Target | Supported Macros | Description |
+//! |---|---|---|---|
+//! | `#[enuminfo(rename_all = "...")]` | Enum | [`EnumName`], [`EnumFromName`], [`EnumVariants`] | Applies a casing convention to variant names (e.g. `"snake_case"`). |
+//! | `#[enuminfo(rename = "...")]` | Variant | [`EnumName`], [`EnumFromName`], [`EnumVariants`] | Overrides the formatted name for an individual variant. |
+//! | `#[enuminfo(ignore_from_name)]` | Variant | [`EnumFromName`] | Excludes the variant from being constructed by `from_name()`, `from_raw_name()`, or `FromStr`. |
+//! | `#[enuminfo(ignore_variant)]` | Variant | [`EnumVariants`] | Excludes the variant from the generated `VARIANTS` slice and `variant_count()`. |
+//!
+//! > **Note:** `#[enuminfo(rename = "...")]` and `#[enuminfo(rename_all = "...")]` are accepted by [`EnumVariants`] for attribute compatibility when used alongside [`EnumName`] or [`EnumFromName`], but they do not affect variant instances in `VARIANTS`.
 //!
 //! # Case Conversions (`rename_all`)
 //!
 //! The `#[enuminfo(rename_all = "...")]` container attribute modifies how variant names are matched or returned.
-//! The supported casing conventions match common values used by **`serde`**:
+//! Supported casing conventions match the standard conventions used by **`serde`**:
 //!
 //! | Option | Conversion Type | Example (`MyVariant`) |
 //! |---|---|---|
@@ -24,7 +38,15 @@
 //! | `"SCREAMING-KEBAB-CASE"` | Screaming kebab case | `"MY-KEBAB-CASE"` |
 //! | `"PascalCase"` / `"UpperCamelCase"` | Pascal / Upper camel case | `"MyVariant"` |
 //!
-//! > **Note:** Casing options and behavior are aligned with standard `serde` attribute names for consistency across serialization and enum utilities.
+//! If an unrecognized casing string is provided, variant names remain unmodified.
+//!
+//! # Feature Flags
+//!
+//! This crate provides several Cargo feature flags:
+//!
+//! - **`from-str`** *(enabled by default)*: Generates an implementation of [`core::str::FromStr`] for enums deriving [`EnumFromName`].
+//! - **`impl-enuminfo`**: Implements companion traits from the [`enuminfo`](https://crates.io/crates/enuminfo) crate (`EnumIs`, `EnumName`, `EnumFromName`, `EnumVariants`).
+//! - **`skip-inherent`**: Skips generating inherent `impl` blocks on the enum, generating only trait implementations when combined with `impl-enuminfo`.
 
 mod enum_from_name;
 mod enum_is;
@@ -39,11 +61,19 @@ use syn::{parse_macro_input, DeriveInput};
 
 /// Derives helper methods to check if an enum instance matches a specific variant.
 ///
-/// For every variant `VariantName`, this macro implements a `const` method named `is_variant_name(&self) -> bool` in `snake_case`.
+/// For every variant `VariantName`, this macro implements a `const` method named
+/// `is_<variant_name>(&self) -> bool` using `snake_case` naming.
 ///
-/// # Limitations
+/// # Compatibility & Limitations
 ///
-/// Works only on `enum` types.
+/// - Works on `enum` types only.
+/// - Supports **all** enum variant types: unit variants (e.g. `Quit`), tuple variants
+///   (e.g. `Write(String)`), and struct variants (e.g. `Move { x: i32, y: i32 }`).
+///
+/// # Feature Flags
+///
+/// If the `impl-enuminfo` feature is enabled, this macro additionally implements
+/// the `enuminfo::EnumIs` marker trait for the enum.
 ///
 /// # Example
 ///
@@ -53,14 +83,16 @@ use syn::{parse_macro_input, DeriveInput};
 /// use enuminfo_macros::EnumIs;
 ///
 /// #[derive(EnumIs)]
-/// enum UserRole {
-///     Admin,
-///     StandardUser,
+/// enum Message {
+///     Quit,
+///     Move { x: i32, y: i32 },
+///     Write(String),
 /// }
 ///
-/// let role = UserRole::Admin;
-/// assert!(role.is_admin());
-/// assert!(!role.is_standard_user());
+/// let msg = Message::Move { x: 10, y: 20 };
+/// assert!(msg.is_move());
+/// assert!(!msg.is_quit());
+/// assert!(!msg.is_write());
 /// # }
 /// ```
 #[proc_macro_derive(EnumIs)]
@@ -75,17 +107,31 @@ pub fn enum_is(input: TokenStream) -> TokenStream {
 /// Derives methods to return the string representation of an enum variant.
 ///
 /// This macro implements two `const` methods on the enum:
-/// - `name(&self) -> &'static str`: Returns the (potentially renamed) variant name.
-/// - `raw_name(&self) -> &'static str`: Returns the original identifier name as defined in code.
+/// - `name(&self) -> &'static str`: Returns the formatted variant name, taking into account
+///   any container `rename_all` casing transformation and variant-level `rename` overrides.
+/// - `raw_name(&self) -> &'static str`: Returns the exact Rust identifier name as written in code.
 ///
 /// # Attributes
 ///
-/// - `#[enuminfo(rename_all = "...")]`: Transforms variant output strings using `serde`-compatible casing names (e.g. `"snake_case"`, `"kebab-case"`).
-/// - `#[enuminfo(rename = "custom_name")]`: Overrides the output string for a specific variant.
+/// - `#[enuminfo(rename_all = "...")]`: Container attribute that transforms output strings using
+///   `serde`-compatible casing names (e.g. `"snake_case"`, `"kebab-case"`, `"camelCase"`).
+/// - `#[enuminfo(rename = "custom_name")]`: Variant attribute that overrides the output string
+///   for a specific variant.
 ///
-/// # Limitations
+/// # Compile-Time Checks
 ///
-/// Works only on `enum` types.
+/// Validates at compile time that all variant names (after applying `rename_all` and `rename`)
+/// are unique. If a duplicate name is detected, compilation fails with an error.
+///
+/// # Compatibility & Limitations
+///
+/// - Works on `enum` types only.
+/// - Supports **all** enum variant types: unit variants, tuple variants, and struct variants.
+///
+/// # Feature Flags
+///
+/// If the `impl-enuminfo` feature is enabled, this macro additionally implements
+/// the `enuminfo::EnumName` trait for the enum.
 ///
 /// # Example
 ///
@@ -100,6 +146,7 @@ pub fn enum_is(input: TokenStream) -> TokenStream {
 ///     Pending,
 ///     #[enuminfo(rename = "in_progress_custom")]
 ///     InProgress,
+///     Completed,
 /// }
 ///
 /// let status = Status::Pending;
@@ -120,21 +167,42 @@ pub fn enum_name(input: TokenStream) -> TokenStream {
         .into()
 }
 
-/// Derives methods to construct unit enum variants from string names.
+/// Derives constructor lookup methods to instantiate unit enum variants from string names.
 ///
-/// This macro implements two methods on the enum:
-/// - `from_name(name: &str) -> Option<Self>`: Matches against the (potentially renamed) variant names.
-/// - `from_raw_name(name: &str) -> Option<Self>`: Matches strictly against original variant identifier names.
+/// This macro implements two lookup methods on the enum:
+/// - `pub fn from_name(name: &str) -> Option<Self>`: Matches against the formatted variant name
+///   (respecting `rename_all` casing rules and `rename` overrides).
+/// - `pub fn from_raw_name(name: &str) -> Option<Self>`: Matches strictly against the original Rust variant identifier name.
+///
+/// Additionally, when the `from-str` feature is enabled (default), it generates an implementation
+/// of [`core::str::FromStr`] that parses formatted variant names by delegating to `from_name()`.
 ///
 /// # Attributes
 ///
-/// - `#[enuminfo(rename_all = "...")]`: Sets variant lookup keys matching `serde`-compatible casing options.
-/// - `#[enuminfo(rename = "custom_name")]`: Overrides the lookup key for `from_name()`.
-/// - `#[enuminfo(ignore_from_name)]`: Excludes the variant from being constructed via `from_name()`.
+/// - `#[enuminfo(rename_all = "...")]`: Container attribute setting variant lookup keys using
+///   `serde`-compatible casing options.
+/// - `#[enuminfo(rename = "custom_name")]`: Variant attribute overriding the lookup key for `from_name()`.
+/// - `#[enuminfo(ignore_from_name)]`: Variant attribute excluding the variant from both `from_name()`
+///   and `from_raw_name()` (and consequently from `FromStr`).
+///
+/// # Compile-Time Checks
+///
+/// Validates at compile time that all formatted variant lookup keys are unique. If duplicates
+/// occur, compilation fails with an error.
 ///
 /// # Limitations
 ///
-/// This macro only supports **Unit Enums** (variants without fields).
+/// This macro supports **Unit Enums** only. Variants must have no data fields:
+/// - Unit variants (e.g. `Variant`)
+/// - Empty tuple variants (e.g. `Variant()`)
+/// - Empty struct variants (e.g. `Variant {}`)
+///
+/// Variants with fields will cause a compilation error.
+///
+/// # Feature Flags
+///
+/// - `from-str` *(default)*: Generates `impl std::str::FromStr for MyEnum`.
+/// - `impl-enuminfo`: Implements the `enuminfo::EnumFromName` trait for the enum.
 ///
 /// # Example
 ///
@@ -152,9 +220,15 @@ pub fn enum_name(input: TokenStream) -> TokenStream {
 ///     Critical,
 /// }
 ///
+/// // Formatted lookup
 /// assert_eq!(Priority::from_name("low"), Some(Priority::Low));
+///
+/// // Raw identifier lookup
 /// assert_eq!(Priority::from_raw_name("Low"), Some(Priority::Low));
+///
+/// // Ignored variants cannot be constructed by name
 /// assert_eq!(Priority::from_name("critical"), None);
+/// assert_eq!(Priority::from_raw_name("Critical"), None);
 /// # }
 /// ```
 #[proc_macro_derive(EnumFromName, attributes(enuminfo))]
@@ -166,19 +240,34 @@ pub fn enum_from_name(input: TokenStream) -> TokenStream {
         .into()
 }
 
-/// Derives a static slice containing all variants of a unit enum.
+/// Derives a static slice and enumeration helpers containing all variants of a unit enum.
 ///
-/// This macro implements a public associated constant on the enum:
-/// - `pub const VARIANTS: &'static [Self]`: Contains an array slice of all (non-ignored) unit variants.
+/// This macro implements the following items on the enum:
+/// - `pub const VARIANTS: &'static [Self]`: An associated static slice containing all (non-ignored) unit variant instances.
+/// - `pub const fn variants() -> &'static [Self]`: Returns `Self::VARIANTS`.
+/// - `pub const fn variant_count() -> usize`: Returns the total number of variants in the static slice (`Self::VARIANTS.len()`).
 ///
 /// # Attributes
 ///
-/// - `#[enuminfo(ignore_variants)]`: Excludes the variant from the generated `VARIANTS` slice.
-/// - `#[enuminfo(rename = "...")]` / `#[enuminfo(rename_all = "...")]`: Evaluates custom/cased names to prevent duplicate collisions in the static array, though the instances themselves remain untouched.
+/// - `#[enuminfo(ignore_variant)]`: Variant attribute that excludes the variant from the generated `VARIANTS` slice,
+///   `variants()`, and `variant_count()`.
+/// - `#[enuminfo(rename = "...")]` / `#[enuminfo(rename_all = "...")]`: Accepted on enum and variant levels
+///   for attribute compatibility when derived together with [`EnumName`] or [`EnumFromName`], but has no effect
+///   on the instances placed in `VARIANTS`.
 ///
 /// # Limitations
 ///
-/// This macro only supports **Unit Enums** (variants without data fields, empty tuples `()`, or empty structs `{}`).
+/// This macro supports **Unit Enums** only. Variants must have no data fields:
+/// - Unit variants (e.g. `Variant`)
+/// - Empty tuple variants (e.g. `Variant()`)
+/// - Empty struct variants (e.g. `Variant {}`)
+///
+/// Variants with fields will cause a compilation error.
+///
+/// # Feature Flags
+///
+/// If the `impl-enuminfo` feature is enabled, this macro additionally implements
+/// the `enuminfo::EnumVariants` trait for the enum.
 ///
 /// # Example
 ///
@@ -193,14 +282,21 @@ pub fn enum_from_name(input: TokenStream) -> TokenStream {
 ///     South,
 ///     East,
 ///     West,
-///     #[enuminfo(ignore_variants)]
+///     #[enuminfo(ignore_variant)]
 ///     Unknown,
 /// }
 ///
+/// // Retrieve slice of all variants
 /// assert_eq!(
 ///     Direction::variants(),
 ///     &[Direction::North, Direction::South, Direction::East, Direction::West]
 /// );
+///
+/// // Direct access to the associated constant
+/// assert_eq!(Direction::VARIANTS.len(), 4);
+///
+/// // Get the total variant count
+/// assert_eq!(Direction::variant_count(), 4);
 /// # }
 /// ```
 #[proc_macro_derive(EnumVariants, attributes(enuminfo))]

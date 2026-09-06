@@ -1,6 +1,6 @@
 [package]
 name = "enuminfo_macros"
-version = "0.3.0"
+version = "0.3.1"
 authors = ["Dante Doménech <dante19031999@gmail.com>"]
 description = "Procedural derive macros for enum inspection, string conversion, lookup, and variant enumeration."
 readme = "README.md"

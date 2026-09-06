@@ -223,7 +223,7 @@ Licensed under either of:
 
 at your option.
 
-Acknowledgements: [[link](https://dante19031999.github.io/enuminfo-macros/ACKNOWLEDGEMENTS.html)](https://dante19031999.github.io/enuminfo-macros/ACKNOWLEDGEMENTS.html)
+Acknowledgements: [https://dante19031999.github.io/enuminfo-macros/ACKNOWLEDGEMENTS.html]
 
 ## Contribution
 

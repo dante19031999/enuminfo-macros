@@ -4,7 +4,7 @@ A collection of procedural derive macros providing inspection, string conversion
 
 [![Crates.io](https://img.shields.io/crates/v/enuminfo_macros.svg)](https://crates.io/crates/enuminfo_macros)
 [![Documentation](https://docs.rs/enuminfo_macros/badge.svg)](https://docs.rs/enuminfo_macros)
-[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)](LICENSE-MIT)
+[![License](https://img.shields.io/badge/license-MIT%2FApache--2.0-blue.svg)]()
 
 ---
 

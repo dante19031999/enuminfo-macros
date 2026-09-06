@@ -110,7 +110,29 @@ pub fn implement_enum_from_name(input: DeriveInput) -> syn::Result<TokenStream> 
             });
         }
 
-        #[cfg(feature = "impl-enuminfo")]
+        #[cfg(not(feature = "skip-inherent"))]
+        let inherent = quote!{
+            impl #enum_ident {
+                pub fn from_name(name: &str) -> Option<#enum_ident> {
+                    match name {
+                        #(#name_arms)*
+                        _ => None,
+                    }
+                }
+
+                pub fn from_raw_name(name: &str) -> Option<#enum_ident> {
+                    match name {
+                        #(#raw_name_arms)*
+                        _ => None,
+                    }
+                }
+            }
+        };
+
+        #[cfg(feature = "skip-inherent")]
+        let inherent = quote!{};
+
+        #[cfg(all(feature = "impl-enuminfo", not(feature = "skip-inherent")))]
         let enuminfo_quote = quote! {
             impl enuminfo::EnumFromName for #enum_ident {
                 fn from_name(name: &str) -> Option<Self>
@@ -129,11 +151,36 @@ pub fn implement_enum_from_name(input: DeriveInput) -> syn::Result<TokenStream> 
             }
         };
 
+        #[cfg(all(feature = "impl-enuminfo", feature = "skip-inherent"))]
+        let enuminfo_quote = quote! {
+            impl enuminfo::EnumFromName for #enum_ident {
+                fn from_name(name: &str) -> Option<Self>
+                where
+                    Self: Sized
+                {
+                    match name {
+                        #(#name_arms)*
+                        _ => None,
+                    }
+                }
+
+                fn from_raw_name(name: &str) -> Option<Self>
+                where
+                    Self: Sized
+                {
+                    match name {
+                        #(#raw_name_arms)*
+                        _ => None,
+                    }
+                }
+            }
+        };
+
         #[cfg(not(feature = "impl-enuminfo"))]
         let enuminfo_quote = quote! {};
 
 
-        #[cfg(feature = "from-str")]
+        #[cfg(all(feature = "from-str", not(feature = "skip-inherent")))]
         let from_str = quote! {
             impl std::str::FromStr for #enum_ident {
                 type Err = enuminfo::error::EnumFromNameError;
@@ -149,26 +196,47 @@ pub fn implement_enum_from_name(input: DeriveInput) -> syn::Result<TokenStream> 
             }
         };
 
+        #[cfg(all(feature = "from-str", feature = "skip-inherent", feature = "impl-enuminfo"))]
+        let from_str = quote! {
+            impl std::str::FromStr for #enum_ident {
+                type Err = enuminfo::error::EnumFromNameError;
+
+                fn from_str(s: &str) -> Result<Self, Self::Err> {
+                    <Self as enuminfo::EnumFromName>::from_name(s).ok_or_else(|| {
+                        enuminfo::error::EnumFromNameError::new(
+                            stringify!(#enum_ident).to_string(),
+                            s.to_string(),
+                        )
+                    })
+                }
+            }
+        };
+
+        #[cfg(all(feature = "from-str", feature = "skip-inherent", not(feature = "impl-enuminfo")))]
+        let from_str = quote! {
+            impl std::str::FromStr for #enum_ident {
+                type Err = enuminfo::error::EnumFromNameError;
+
+                fn from_str(s: &str) -> Result<Self, Self::Err> {
+                    let name = match s {
+                        #(#name_arms)*
+                        _ => None,
+                    };
+                    name.ok_or_else(|| {
+                        enuminfo::error::EnumFromNameError::new(
+                            stringify!(#enum_ident).to_string(),
+                            s.to_string(),
+                        )
+                    })
+                }
+            }
+        };
+
         #[cfg(not(feature = "from-str"))]
         let from_str = quote! {};
 
         let expanded = quote! {
-            impl #enum_ident {
-                pub fn from_name(name: &str) -> Option<#enum_ident> {
-                    match name {
-                        #(#name_arms)*
-                        _ => None,
-                    }
-                }
-
-                pub fn from_raw_name(name: &str) -> Option<#enum_ident> {
-                    match name {
-                        #(#raw_name_arms)*
-                        _ => None,
-                    }
-                }
-            }
-
+            #inherent
             #enuminfo_quote
             #from_str
         };

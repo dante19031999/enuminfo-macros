@@ -48,6 +48,8 @@ use syn::{parse_macro_input, DeriveInput};
 /// # Example
 ///
 /// ```rust
+/// # #[cfg(not(feature = "skip-inherent"))]
+/// # {
 /// use enuminfo_macros::EnumIs;
 ///
 /// #[derive(EnumIs)]
@@ -59,6 +61,7 @@ use syn::{parse_macro_input, DeriveInput};
 /// let role = UserRole::Admin;
 /// assert!(role.is_admin());
 /// assert!(!role.is_standard_user());
+/// # }
 /// ```
 #[proc_macro_derive(EnumIs)]
 pub fn enum_is(input: TokenStream) -> TokenStream {
@@ -87,6 +90,8 @@ pub fn enum_is(input: TokenStream) -> TokenStream {
 /// # Example
 ///
 /// ```rust
+/// # #[cfg(not(feature = "skip-inherent"))]
+/// # {
 /// use enuminfo_macros::EnumName;
 ///
 /// #[derive(EnumName)]
@@ -104,6 +109,7 @@ pub fn enum_is(input: TokenStream) -> TokenStream {
 /// let in_progress = Status::InProgress;
 /// assert_eq!(in_progress.name(), "in_progress_custom");
 /// assert_eq!(in_progress.raw_name(), "InProgress");
+/// # }
 /// ```
 #[proc_macro_derive(EnumName, attributes(enuminfo))]
 pub fn enum_name(input: TokenStream) -> TokenStream {
@@ -133,6 +139,8 @@ pub fn enum_name(input: TokenStream) -> TokenStream {
 /// # Example
 ///
 /// ```rust
+/// # #[cfg(not(feature = "skip-inherent"))]
+/// # {
 /// use enuminfo_macros::EnumFromName;
 ///
 /// #[derive(Debug, PartialEq, EnumFromName)]
@@ -147,6 +155,7 @@ pub fn enum_name(input: TokenStream) -> TokenStream {
 /// assert_eq!(Priority::from_name("low"), Some(Priority::Low));
 /// assert_eq!(Priority::from_raw_name("Low"), Some(Priority::Low));
 /// assert_eq!(Priority::from_name("critical"), None);
+/// # }
 /// ```
 #[proc_macro_derive(EnumFromName, attributes(enuminfo))]
 pub fn enum_from_name(input: TokenStream) -> TokenStream {
@@ -174,6 +183,8 @@ pub fn enum_from_name(input: TokenStream) -> TokenStream {
 /// # Example
 ///
 /// ```rust
+/// # #[cfg(not(feature = "skip-inherent"))]
+/// # {
 /// use enuminfo_macros::EnumVariants;
 ///
 /// #[derive(Debug, PartialEq, EnumVariants)]
@@ -187,9 +198,10 @@ pub fn enum_from_name(input: TokenStream) -> TokenStream {
 /// }
 ///
 /// assert_eq!(
-///     Direction::VARIANTS,
+///     Direction::variants(),
 ///     &[Direction::North, Direction::South, Direction::East, Direction::West]
 /// );
+/// # }
 /// ```
 #[proc_macro_derive(EnumVariants, attributes(enuminfo))]
 pub fn enum_variants(input: TokenStream) -> TokenStream {

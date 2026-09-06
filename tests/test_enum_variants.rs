@@ -1,4 +1,7 @@
+#![cfg(any(not(feature = "skip-inherent"), feature = "impl-enuminfo"))]
 use enuminfo_macros::EnumVariants;
+#[cfg(all(feature = "skip-inherent", feature = "impl-enuminfo"))]
+use enuminfo::*;
 
 #[test]
 fn test_basic_enum_variants() {
@@ -11,9 +14,10 @@ fn test_basic_enum_variants() {
     }
 
     assert_eq!(
-        Status::VARIANTS,
+        Status::variants(),
         &[Status::Pending, Status::Active, Status::Completed]
     );
+    assert_eq!(Status::variant_count(), 3);
 }
 
 #[test]
@@ -27,7 +31,8 @@ fn test_enum_variants_with_ignore() {
         InternalSystem,
     }
 
-    assert_eq!(Role::VARIANTS, &[Role::Admin, Role::User]);
+    assert_eq!(Role::variants(), &[Role::Admin, Role::User]);
+    assert_eq!(Role::variant_count(), 2);
 }
 
 #[test]
@@ -40,9 +45,10 @@ fn test_enum_variants_empty_tuple_and_struct_variants() {
     }
 
     assert_eq!(
-        EmptyKinds::VARIANTS,
+        EmptyKinds::variants(),
         &[EmptyKinds::Unit, EmptyKinds::Tuple(), EmptyKinds::Struct {}]
     );
+    assert_eq!(EmptyKinds::variant_count(), 3);
 }
 
 #[test]
@@ -58,5 +64,6 @@ fn test_enum_variants_with_rename_attributes() {
         Blue,
     }
 
-    assert_eq!(Color::VARIANTS, &[Color::Red, Color::Green, Color::Blue]);
+    assert_eq!(Color::variants(), &[Color::Red, Color::Green, Color::Blue]);
+    assert_eq!(Color::variant_count(), 3);
 }

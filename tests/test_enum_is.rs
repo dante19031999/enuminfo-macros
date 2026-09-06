@@ -1,3 +1,4 @@
+#![cfg(any(not(feature = "skip-inherent"), feature = "impl-enuminfo"))]
 use enuminfo_macros::EnumIs;
 
 #[derive(EnumIs)]

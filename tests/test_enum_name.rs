@@ -1,5 +1,7 @@
-
-use enuminfo_macros::EnumName; // Cambia enuminfo_macros por el nombre de tu crate de macros en Cargo.toml
+#![cfg(any(not(feature = "skip-inherent"), feature = "impl-enuminfo"))]
+use enuminfo_macros::EnumName;
+#[cfg(all(feature = "skip-inherent", feature = "impl-enuminfo"))]
+use enuminfo::*;
 
 // 1. Enum simple sin modificaciones de nombre
 #[derive(EnumName)]

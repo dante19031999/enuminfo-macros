@@ -78,23 +78,8 @@ pub fn implement_enum_name(input: DeriveInput) -> syn::Result<TokenStream> {
             });
         }
 
-        #[cfg(feature = "impl-enuminfo")]
-        let enuminfo_quote = quote! {
-            impl enuminfo::EnumName for #enum_ident {
-                fn name(&self) -> &'static str {
-                    #enum_ident::name(self)
-                }
-
-                fn raw_name(&self) -> &'static str {
-                    #enum_ident::raw_name(self)
-                }
-            }
-        };
-
-        #[cfg(not(feature = "impl-enuminfo"))]
-        let enuminfo_quote = quote! {};
-
-        let expanded = quote! {
+        #[cfg(not(feature = "skip-inherent"))]
+        let inherent = quote! {
             impl #enum_ident {
                 pub const fn name(&self) -> &'static str {
                     match self {
@@ -108,7 +93,46 @@ pub fn implement_enum_name(input: DeriveInput) -> syn::Result<TokenStream> {
                     }
                 }
             }
+        };
 
+        #[cfg(feature = "skip-inherent")]
+        let inherent = quote!{};
+
+        #[cfg(all(feature = "impl-enuminfo", not(feature = "skip-inherent")))]
+        let enuminfo_quote = quote! {
+            impl enuminfo::EnumName for #enum_ident {
+                fn name(&self) -> &'static str {
+                    #enum_ident::name(self)
+                }
+
+                fn raw_name(&self) -> &'static str {
+                    #enum_ident::raw_name(self)
+                }
+            }
+        };
+
+        #[cfg(all(feature = "impl-enuminfo", feature = "skip-inherent"))]
+        let enuminfo_quote = quote! {
+            impl enuminfo::EnumName for #enum_ident {
+                fn name(&self) -> &'static str {
+                    match self {
+                        #(#name_arms)*
+                    }
+                }
+
+                fn raw_name(&self) -> &'static str {
+                    match self {
+                        #(#raw_name_arms)*
+                    }
+                }
+            }
+        };
+
+        #[cfg(not(feature = "impl-enuminfo"))]
+        let enuminfo_quote = quote! {};
+
+        let expanded = quote! {
+            #inherent
             #enuminfo_quote
         };
 

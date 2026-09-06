@@ -13,6 +13,7 @@ edition = "2021"
 [features]
 default = ["from-str", "into-iter"]
 "impl-enuminfo" = []
+"skip-inherent" = []
 "from-str" = []
 "into-iter" = []
 

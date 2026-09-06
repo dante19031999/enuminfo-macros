@@ -88,7 +88,29 @@ pub fn implement_enum_variants(input: DeriveInput) -> syn::Result<TokenStream> {
 
         }
 
-        #[cfg(feature = "impl-enuminfo")]
+        #[cfg(not(feature = "skip-inherent"))]
+        let inherent = quote!{
+            impl #enum_ident {
+                pub const VARIANTS: &'static [#enum_ident] = &[
+                        #(#variants)*
+                ];
+
+                pub const fn variants() -> &'static [#enum_ident]
+                {
+                    Self::VARIANTS
+                }
+
+                pub const fn variant_count() -> usize
+                {
+                    Self::VARIANTS.len()
+                }
+            }
+        };
+
+        #[cfg(feature = "skip-inherent")]
+        let inherent = quote!{};
+
+        #[cfg(all(feature = "impl-enuminfo", not(feature = "skip-inherent")))]
         let enuminfo_quote = quote! {
             impl enuminfo::EnumVariants for #enum_ident {
                 fn variants() -> &'static [Self]
@@ -108,16 +130,36 @@ pub fn implement_enum_variants(input: DeriveInput) -> syn::Result<TokenStream> {
             }
         };
 
+        #[cfg(all(feature = "impl-enuminfo", feature = "skip-inherent"))]
+        let enuminfo_quote = {
+            let variants_len = variants.len();
+            quote! {
+                impl enuminfo::EnumVariants for #enum_ident {
+                    fn variants() -> &'static [Self]
+                    where
+                        Self: Sized
+                    {
+                        &[
+                            #(#variants)*
+                        ]
+                    }
+
+                    fn variant_count() -> usize
+                    where
+                        Self: Sized
+                    {
+                        #variants_len
+                    }
+
+                }
+            }
+        };
+
         #[cfg(not(feature = "impl-enuminfo"))]
         let enuminfo_quote = quote! {};
 
         let expanded = quote! {
-            impl #enum_ident {
-                pub const VARIANTS: &'static [#enum_ident] = &[
-                        #(#variants)*
-                ];
-            }
-
+            #inherent
             #enuminfo_quote
         };
 

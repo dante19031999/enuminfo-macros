@@ -1,8 +1,13 @@
-use enuminfo_macros::EnumFromName; // Cambia según el nombre de tu crate de macros
-use enuminfo_macros::EnumClass;
+#![cfg(any(not(feature = "skip-inherent"), feature = "impl-enuminfo"))]
+
+use enuminfo_macros::EnumFromName;
+#[cfg(all(feature = "skip-inherent", feature = "impl-enuminfo"))]
+use enuminfo::*;
+#[cfg(feature = "from-str")]
+use std::str::FromStr;
 
 // 1. Enum básico
-#[derive(Debug, PartialEq, EnumFromName, EnumClass)]
+#[derive(Debug, PartialEq, EnumFromName)]
 #[allow(dead_code)]
 enum SimpleEnum {
     FirstVariant,
@@ -10,7 +15,7 @@ enum SimpleEnum {
 }
 
 // 2. Enum con rename_all y rename individual
-#[derive(Debug, PartialEq, EnumFromName, EnumClass)]
+#[derive(Debug, PartialEq, EnumFromName)]
 #[enuminfo(rename_all = "snake_case")]
 #[allow(dead_code)]
 enum CustomEnum {
@@ -20,7 +25,7 @@ enum CustomEnum {
 }
 
 // 3. Enum con ignore_from_name
-#[derive(Debug, PartialEq, EnumFromName, EnumClass)]
+#[derive(Debug, PartialEq, EnumFromName)]
 #[enuminfo(rename_all = "kebab-case")]
 #[allow(dead_code)]
 enum IgnoredEnum {
@@ -29,7 +34,7 @@ enum IgnoredEnum {
     IgnoredStatus,
 }
 
-#[derive(Debug, PartialEq, EnumFromName, EnumClass)]
+#[derive(Debug, PartialEq, EnumFromName)]
 #[allow(dead_code)]
 enum TroubleSomeEnum {
     //FirstVariant(),
@@ -103,4 +108,18 @@ fn test_ignored_variant_cannot_be_parsed() {
     assert_eq!(IgnoredEnum::from_name("ignored-status"), None);
     assert_eq!(IgnoredEnum::from_raw_name("IgnoredStatus"), None);
 }
+
+#[cfg(feature = "from-str")]
+#[test]
+fn test_from_str() {
+    // La variante normal se parsea sin problema
+    assert_eq!(
+        IgnoredEnum::from_str("active-status").unwrap(),
+        IgnoredEnum::ActiveStatus
+    );
+
+    // La variante ignorada DEBE devolver None en ambos casos
+    assert!(IgnoredEnum::from_str("ignored-status").is_err());
+}
+
 

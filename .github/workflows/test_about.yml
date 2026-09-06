@@ -1,0 +1,21 @@
+name: Test About
+
+on:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  test-about:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/dante19031999/rust-ci-tools:latest
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Test Cargo About Generation
+        run: cargo about generate about.hbs > /dev/null
